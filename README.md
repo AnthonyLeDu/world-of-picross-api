@@ -30,6 +30,24 @@ Open the Terminal located at the project's root and execute
 pip install -r requirements.txt
 ```
 
+### Creating the database
+
+1. Install psql
+
+2. Open the postgres REPL and execute the followings (replace `.......` by an actual password) to create the database:
+
+  ```sql
+  CREATE ROLE picross WITH LOGIN PASSWORD '.......';
+  CREATE DATABASE picross OWNER picross;
+  ```
+
+3. Open a Terminal at the root of the project and execute the followings to init and seed the database:
+
+```bash
+psql -U picross -d picross -f database/init.sql
+psql -U picross -d picross -f database/seed.sql
+```
+
 ## Running the server
 
 Make sure you activated the python virtual environment and execute
