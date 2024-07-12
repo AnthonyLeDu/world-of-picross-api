@@ -1,25 +1,23 @@
-from pydantic import BaseModel
+from sqlmodel import Field, SQLModel
+from sqlalchemy import Column, ARRAY, BOOLEAN
 
 
-class Game(BaseModel):
-    id: int
+class Game(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
     name: str
     difficulty: int
-    serialized_content: str
-    content: list[list[int]] | None = None
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.content = eval(self.serialized_content)
+    content: list[list[bool]] | None = Field(
+        default=None, sa_column=Column(ARRAY(BOOLEAN))
+    )
 
     @property
     def rows_count(self) -> int:
-        return len(self.content)
+        return len(self.content) if self.content else 0
 
     @property
     def cols_count(self) -> int:
-        return len(max(self.content, key=len))
-    
+        return len(max(self.content, key=len)) if self.content else 0
+
     @property
     def model_dump_preview(self) -> dict:
         """Return model data only needed for preview: id, name, difficulty,

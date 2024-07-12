@@ -41,17 +41,21 @@ pip install -r requirements.txt
   CREATE DATABASE picross OWNER picross;
   ```
 
-3. Open a Terminal at the root of the project and execute the followings to init and seed the database:
+3. Open a Terminal at the root of the project and execute the followings to init the database:
 
 ```bash
-psql -U picross -d picross -f database/init.sql
-psql -U picross -d picross -f database/seed.sql
+psql -U picross -d picross -f app/database/init.sql
 ```
+
+## Creating the .env
+
+Copy `.env.example` file, rename it `.env` and modify the informations depending on your setup.
+Make sure you set the **DEBUG option to False** when in production.
 
 ## Running the server
 
 Make sure you activated the python virtual environment and execute
 
 ```bash
-fastapi dev main.py
+fastapi dev app/main.py
 ```
