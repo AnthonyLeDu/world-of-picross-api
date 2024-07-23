@@ -1,22 +1,30 @@
 BEGIN;
 
-INSERT INTO "user" (
-  "pseudo",
-  "email",
-  "password"
+WITH inserted_users AS (
+  INSERT INTO "user" (
+    "pseudo",
+    "email",
+    "password"
+  )
+  VALUES
+  (
+    'User1',
+    'test.user@mail.com',
+    'azerty123'
+  ),
+  (
+    'User2',
+    'user.test@mail.com',
+    'abcd789'
+  )
+  RETURNING id, pseudo
 )
-VALUES
-(
-  'TestUser',
-  'test.user@mail.com',
-  'azerty123'
-)
-;
 
 INSERT INTO "game" (
   "name",
   "difficulty",
-  "content"
+  "content",
+  "creator_id"
 )
 VALUES
 (
@@ -30,7 +38,8 @@ VALUES
     {1, 1, 1, 1, 1},
     {1, 1, 0, 1, 1},
     {1, 0, 0, 0, 1}
-  }'
+  }',
+  (SELECT id FROM inserted_users WHERE pseudo = 'User1')
 ),
 (
   'B',
@@ -43,7 +52,8 @@ VALUES
     {1, 0, 0, 0, 1},
     {1, 0, 0, 0, 1},
     {1, 1, 1, 1, 0}
-  }'
+  }',
+  null
 )
 ;
 

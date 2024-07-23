@@ -19,7 +19,8 @@ CREATE TABLE "game" (
   "difficulty" INT NOT NULL,
   "content" BOOLEAN[][],
 	"created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  "updated_at" TIMESTAMPTZ
+  "updated_at" TIMESTAMPTZ,
+  "creator_id" INT REFERENCES "user"("id")
 );
 
 
