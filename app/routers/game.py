@@ -1,6 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from ..models.game import Game
-from ..models.user import User
 from sqlmodel import Session, select
 from ..database import engine
 
@@ -13,16 +12,18 @@ async def get_all_games():
         # statement = select(Game, User).join(User, isouter=True)
         statement = select(Game)
         games = session.exec(statement).all()
-    return games
+        return games
 
 
 @router.get("/game/{id}")
 async def get_game(id: int):
     with Session(engine) as session:
         game = session.get(Game, id)
-    if game is not None:
+        if game is None:
+            raise HTTPException(
+                status_code=404, detail=f"No game found for given id ({id})."
+            )
         return game
-    # TODO: Return 404 response
 
 
 @router.post("/game")
@@ -31,7 +32,7 @@ async def create_game(game: Game):
         session.add(game)
         session.commit()
         session.refresh(game)
-    return game
+        return game
 
 
 @router.put("/game/{id}")
@@ -50,7 +51,7 @@ async def update_game(id: int, game: Game):
         session.add(db_game)
         session.commit()
         session.refresh(db_game)
-    return db_game
+        return db_game
 
 
 @router.delete("/game/{id}")

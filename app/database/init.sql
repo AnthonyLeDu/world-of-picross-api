@@ -1,6 +1,6 @@
 BEGIN;
 
-DROP TABLE IF EXISTS "game", "user", "trial";
+DROP TABLE IF EXISTS "game", "user", "gamestate";
 
 CREATE TABLE "user" (
   "id" SERIAL PRIMARY KEY NOT NULL UNIQUE,
@@ -24,12 +24,12 @@ CREATE TABLE "game" (
 );
 
 
-CREATE TABLE "trial" (
+CREATE TABLE "gamestate" (
   "id" SERIAL PRIMARY KEY NOT NULL UNIQUE,
-  "user_id" INT REFERENCES "user"("id"),
-  "game_id" INT REFERENCES "game"("id"),
-  "completed" BOOLEAN,
-  "current_content" BOOLEAN[][] NOT NULL
+  "user_id" INT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
+  "game_id" INT NOT NULL REFERENCES "game"("id") ON DELETE CASCADE,
+  "is_completed" BOOLEAN NOT NULL DEFAULT FALSE,
+  "current_content" BOOLEAN[][]
 );
 
 COMMIT;

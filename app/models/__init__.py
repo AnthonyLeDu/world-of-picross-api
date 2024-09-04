@@ -1,0 +1,1 @@
+GameContent = list[list[bool]]
