@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from ..models.user import User
 from ..models.game import Game
 from sqlmodel import Session, select
 from ..database import engine
@@ -9,7 +10,6 @@ router = APIRouter()
 @router.get("/games")
 async def get_all_games():
     with Session(engine) as session:
-        # statement = select(Game, User).join(User, isouter=True)
         statement = select(Game)
         games = session.exec(statement).all()
         return games
