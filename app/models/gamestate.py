@@ -1,6 +1,6 @@
+from sqlalchemy import Column
 from sqlmodel import Field, Relationship, SQLModel
-from sqlalchemy import Column, ARRAY, BOOLEAN
-from . import GameContent
+from sqlalchemy.dialects.postgresql import JSONB
 
 
 class GameState(SQLModel, table=True):
@@ -11,10 +11,7 @@ class GameState(SQLModel, table=True):
         default=None, foreign_key="user.id", primary_key=True
     )
     is_completed: bool = False
-    current_content: GameContent | None = Field(
-        default=None,
-        sa_column=Column(ARRAY(BOOLEAN)),
-    )
+    current_content: dict | None = Field(default=None, sa_column=Column(JSONB))
 
     game: "Game" = Relationship(back_populates="player_links")  # type: ignore
     user: "User" = Relationship(  # type: ignore

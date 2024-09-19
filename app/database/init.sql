@@ -17,7 +17,7 @@ CREATE TABLE "game" (
   "id" SERIAL PRIMARY KEY NOT NULL UNIQUE,
   "name" VARCHAR(64) NOT NULL,
   "difficulty" INT NOT NULL,
-  "content" BOOLEAN[][],
+  "content" JSONB,
 	"created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updated_at" TIMESTAMPTZ,
   "creator_id" INT REFERENCES "user"("id")
@@ -29,7 +29,7 @@ CREATE TABLE "gamestate" (
   "user_id" INT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
   "game_id" INT NOT NULL REFERENCES "game"("id") ON DELETE CASCADE,
   "is_completed" BOOLEAN NOT NULL DEFAULT FALSE,
-  "current_content" BOOLEAN[][]
+  "current_content" JSONB
 );
 
 COMMIT;
