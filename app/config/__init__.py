@@ -12,3 +12,9 @@ DATABASE_URL: str = (
     f"@{os.getenv("POSTGRES_SERVER")}:{os.getenv("POSTGRES_PORT")}"\
     f"/{os.getenv("POSTGRES_DB")}"
 )
+
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(
+  os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES")
+)

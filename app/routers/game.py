@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException
-from ..models.user import User
+from typing import Annotated
+from fastapi import APIRouter, HTTPException, Depends
 from ..models.game import Game
 from sqlmodel import Session, select
 from ..database import engine
+from ..security import oauth2_scheme
 
 router = APIRouter()
 
@@ -16,7 +17,7 @@ async def get_all_games():
 
 
 @router.get("/game/{id}")
-async def get_game(id: int):
+async def get_one_game(id: int):
     with Session(engine) as session:
         game = session.get(Game, id)
         if game is None:

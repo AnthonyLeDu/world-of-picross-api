@@ -1,11 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from . import config
-from .database import init_db
+# from .database import init_db
 from .routers import game, user
 
 
 app = FastAPI()
+
 
 app.add_middleware(CORSMiddleware, allow_origins=config.ALLOWED_ORIGINS)
 
