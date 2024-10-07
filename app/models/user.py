@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, status
 from sqlmodel import Field, SQLModel, Relationship, Session, select
 from ..database import engine
 from .gamestate import GameState
-from ..security import oauth2_scheme, TokenData
+from ..security import cookie_scheme, TokenData
 from ..config import JWT_SECRET_KEY, JWT_ALGORITHM
 
 
@@ -30,7 +30,7 @@ async def get_user(email: str):
         return session.exec(statement).one_or_none()
 
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+async def get_current_user(token: str = Depends(cookie_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",

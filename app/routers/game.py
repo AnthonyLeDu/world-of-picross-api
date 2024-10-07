@@ -1,9 +1,7 @@
-from typing import Annotated
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from ..models.game import Game
 from sqlmodel import Session, select
 from ..database import engine
-from ..security import oauth2_scheme
 
 router = APIRouter()
 

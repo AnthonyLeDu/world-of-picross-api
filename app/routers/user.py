@@ -1,6 +1,7 @@
 from typing import Annotated
 from datetime import timedelta
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, Request, status
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -13,7 +14,7 @@ from ..security import (
     create_access_token,
     get_password_hash,
 )
-from ..config import JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+from ..config import JWT_ACCESS_TOKEN_EXPIRE_MINUTES, JWT_COOKIE_NAME
 
 router = APIRouter()
 
@@ -38,11 +39,22 @@ async def login_for_access_token(
         )
 
     # Create and send token
-    access_token_expires = timedelta(minutes=JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+    expires = timedelta(minutes=JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
+        data={"sub": user.email}, expires_delta=expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    response = JSONResponse(
+        content={"access_token": access_token, "token_type": "bearer"}
+    )
+    response.set_cookie(
+        key=JWT_COOKIE_NAME,
+        value=access_token,
+        expires=expires,
+        secure=True,
+        httponly=True,
+        samesite="strict",  # lax
+    )
+    return response
 
 
 @router.get("/users")
@@ -57,6 +69,14 @@ async def get_user_me(
     current_user: Annotated[User, Depends(get_current_user)]
 ):
     return current_user
+
+# @router.get("/user/me")
+# async def get_current_user(request: Request):
+#     access_token = request.cookies.get(JWT_COOKIE_NAME)
+#     if not access_token:
+#         raise HTTPException(status_code=403, detail="Not authenticated")
+#     # Add token validation logic (decode JWT, etc.)
+#     return access_token  # or return decoded user data
 
 
 @router.get("/user/{id}")

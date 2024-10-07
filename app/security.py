@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta, timezone
 import jwt
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import APIKeyCookie
 from passlib.context import CryptContext
 from pydantic import BaseModel
-from .config import JWT_SECRET_KEY, JWT_ALGORITHM
+from .config import JWT_SECRET_KEY, JWT_ALGORITHM, JWT_COOKIE_NAME
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+cookie_scheme = APIKeyCookie(name=JWT_COOKIE_NAME)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
