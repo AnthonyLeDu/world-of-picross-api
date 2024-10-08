@@ -25,7 +25,7 @@ class LoginData(BaseModel):
 
 
 @router.post("/token")
-async def login_for_access_token(
+async def login_with_credentials(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ) -> Token:
     # user email must be under the 'username' to satisfy the OAuth2 specs.
@@ -52,9 +52,16 @@ async def login_for_access_token(
         expires=expires,
         secure=True,
         httponly=True,
-        samesite="strict",  # lax
+        samesite="strict",
     )
     return response
+
+
+@router.get("/token")
+async def login_with_cookie(
+    current_user: Annotated[User, Depends(get_current_user)]
+):
+    return current_user
 
 
 @router.get("/users")
@@ -69,14 +76,6 @@ async def get_user_me(
     current_user: Annotated[User, Depends(get_current_user)]
 ):
     return current_user
-
-# @router.get("/user/me")
-# async def get_current_user(request: Request):
-#     access_token = request.cookies.get(JWT_COOKIE_NAME)
-#     if not access_token:
-#         raise HTTPException(status_code=403, detail="Not authenticated")
-#     # Add token validation logic (decode JWT, etc.)
-#     return access_token  # or return decoded user data
 
 
 @router.get("/user/{id}")
