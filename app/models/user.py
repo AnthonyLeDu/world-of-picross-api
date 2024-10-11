@@ -1,7 +1,9 @@
 from typing import Annotated
 import jwt
+from sqlalchemy.orm import joinedload
 from jwt.exceptions import InvalidTokenError
 from fastapi import Depends, HTTPException, status
+from pydantic import BaseModel, ConfigDict
 from sqlmodel import Field, SQLModel, Relationship, Session, select
 from ..database import engine
 from .gamestate import GameState
@@ -20,14 +22,45 @@ class User(SQLModel, table=True):
     played_game_links: list[GameState] = Relationship(back_populates="user")
 
     @property
+    def created_games_ids(self):
+        return [game.id for game in self.created_games]
+
+    @property
     def played_games_ids(self):
         return [game_state.game_id for game_state in self.played_game_links]
 
 
+class UserSummary(BaseModel):
+    id: int | None
+    pseudo: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PublicUser(UserSummary):
+    created_games_ids: list[int]  # type: ignore
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PrivateUser(PublicUser):
+    email: str | None
+    played_games_ids: list[int]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 async def get_user(email: str):
     with Session(engine) as session:
-        statement = select(User).where(User.email == email)
-        return session.exec(statement).one_or_none()
+        statement = (
+            select(User)
+            .options(
+                joinedload(User.played_game_links),
+                joinedload(User.created_games),
+            )
+            .where(User.email == email)
+        )
+        return session.exec(statement).unique().one_or_none()
 
 
 async def get_current_user(token: str = Depends(cookie_scheme)):
@@ -48,9 +81,3 @@ async def get_current_user(token: str = Depends(cookie_scheme)):
     if user is None:
         raise credentials_exception
     return user
-
-
-async def is_current_user(
-    current_user: Annotated[User, Depends(get_current_user)], user: User
-):
-    return current_user == user

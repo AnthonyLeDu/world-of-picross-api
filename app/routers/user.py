@@ -1,12 +1,18 @@
 from typing import Annotated
 from datetime import timedelta
-from fastapi import APIRouter, HTTPException, Depends, Request, status
+from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlmodel import Session, select
-from ..models.user import User, get_current_user, is_current_user, get_user
-from ..models.game import Game
+from ..models.user import (
+    User,
+    PrivateUser,
+    PublicUser,
+    get_current_user,
+    get_user,
+)
+from ..models.game import Game, GameSummary
 from ..database import engine
 from ..security import (
     verify_password,
@@ -68,46 +74,47 @@ async def login_with_cookie(
 async def get_all_users():
     with Session(engine) as session:
         users = session.exec(select(User)).all()
-    return users
+        # public_users = [user.to_public_user() for user in users]
+        return [PublicUser.model_validate(user) for user in users]
 
 
-@router.get("/user/me")
+@router.get("/user/me", response_model=PrivateUser)
 async def get_user_me(
     current_user: Annotated[User, Depends(get_current_user)]
 ):
     return current_user
 
 
-@router.get("/user/{id}")
+@router.get("/user/{id}", response_model=PublicUser)
 async def get_one_user(id: int):
     with Session(engine) as session:
         user = session.get(User, id)
-    if user is None:
-        raise HTTPException(
-            status_code=404,
-            detail="User does not exist.",
-        )
-    return user
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User '{id}' does not exist.",
+            )
+        return PublicUser.model_validate(user)
 
 
 @router.get("/user/{id}/games")
-async def get_user_games(id: int):
+async def get_games_created_by_user(id: int):
     with Session(engine) as session:
-        games = session.select(Game).where(Game.creator_id == id).all()
-    return games
+        games = session.exec(select(Game).where(Game.creator_id == id)).all()
+        return [GameSummary.model_validate(game) for game in games]
 
 
-@router.post("/user")
+@router.post("/user", status_code=status.HTTP_201_CREATED)
 async def create_user(user: User):
     user.password = get_password_hash(user.password)
     with Session(engine) as session:
         session.add(user)
         session.commit()
         session.refresh(user)
-    return user
+        return PrivateUser.model_validate(user)
 
 
-@router.put("/user/{id}")
+@router.put("/user/{id}", response_model=PrivateUser)
 async def update_user(
     current_user: Annotated[User, Depends(get_current_user)],
     id: int,
@@ -125,9 +132,8 @@ async def update_user(
             )
         if current_user != db_user:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail="You are not allowed to modify this user.",
-                headers={"WWW-Authenticate": "Bearer"},
             )
         db_user.pseudo = user.pseudo
         db_user.email = user.email  # OAuth2 spec : username = email
@@ -135,26 +141,24 @@ async def update_user(
         session.add(db_user)
         session.commit()
         session.refresh(db_user)
-    return db_user
+        return PrivateUser.model_validate(db_user)
 
 
-@router.delete("/user/{id}")
+@router.delete("/user/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
-    is_current_user: Annotated[User, Depends(is_current_user)], id: int
+    current_user: Annotated[User, Depends(get_current_user)], id: int
 ):
-    if not is_current_user:
+    if not current_user.id == id:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not allowed to delete this user.",
-            headers={"WWW-Authenticate": "Bearer"},
         )
     with Session(engine) as session:
         user = session.get(User, id)
         if user is None:
             raise HTTPException(
-                status_code=404,
-                detail="User does not exist.",
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User '{id}' does not exist.",
             )
         session.delete(user)
         session.commit()
-        # TODO: Return deleted response code
