@@ -18,6 +18,7 @@ CREATE TABLE "game" (
   "name" VARCHAR(64) NOT NULL,
   "difficulty" INT NOT NULL,
   "content" JSONB,
+  "clues" JSONB,
 	"created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updated_at" TIMESTAMPTZ,
   "creator_id" INT REFERENCES "user"("id")

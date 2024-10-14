@@ -1,6 +1,6 @@
 from typing import Annotated
 from fastapi import APIRouter, HTTPException, Depends, status
-from ..models.game import Game, GameSummary
+from ..models.game import Game, GameDetails, GameSummary
 from ..models.user import User, get_current_user
 from sqlmodel import Session, select
 from ..database import engine
@@ -25,7 +25,8 @@ async def get_one_game(id: int):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"No game found for given id ({id}).",
             )
-        return game
+        game.update_clues()  # TODO: remove
+        return GameDetails.model_validate(game)
 
 
 @router.post("/game", status_code=status.HTTP_201_CREATED)
@@ -37,7 +38,7 @@ async def create_game(
         session.add(game)
         session.commit()
         session.refresh(game)
-        return game
+        return GameDetails.model_validate(game)
 
 
 @router.put("/game/{id}")
@@ -69,7 +70,7 @@ async def update_game(
         session.add(db_game)
         session.commit()
         session.refresh(db_game)
-        return db_game
+        return GameDetails.model_validate(game)
 
 
 @router.delete("/game/{id}", status_code=status.HTTP_204_NO_CONTENT)
