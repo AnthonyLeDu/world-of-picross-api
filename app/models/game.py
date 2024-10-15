@@ -6,19 +6,13 @@ from sqlalchemy.dialects.postgresql import JSONB
 from pydantic import BaseModel, ConfigDict
 from .gamestate import GameState
 from .user import User, UserSummary
-
-type Rgba = list[int | float]
-type Clue = dict[str, Rgba | int]
-type ClueLine = list[Clue | None]
-type Clues = list[list[ClueLine]]
-type LineContent = list[Rgba | None]
-type Content = list[LineContent | None]
+from . import ClueLine, Clues, LineContent, Content
 
 
 class Game(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True)
-    difficulty: int = Field(index=True)
+    difficulty: int | None = Field(default=None, index=True)
     content: Content | None = Field(default=None, sa_column=Column(JSONB))
     clues: Clues | None = Field(default=None, sa_column=Column(JSONB))
     creator_id: int | None = Field(default=None, foreign_key="user.id")
@@ -93,15 +87,25 @@ class GameSummary(BaseModel):
     id: int | None
     name: str
     difficulty: int
-    creator: UserSummary | None
     rows_count: int | None
     columns_count: int | None
 
     model_config = ConfigDict(from_attributes=True)
 
 
-class GameDetails(GameSummary):
+class GameSummaryWithCreator(GameSummary):
+    creator: UserSummary | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class GameDetails(GameSummaryWithCreator):
     content: Content | None
     clues: Clues | None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class GameInput(BaseModel):
+    name: str
+    content: Content | None

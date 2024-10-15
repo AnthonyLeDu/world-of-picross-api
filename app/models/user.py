@@ -1,4 +1,3 @@
-from typing import Annotated
 import jwt
 from sqlalchemy.orm import joinedload
 from jwt.exceptions import InvalidTokenError

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import config
 
 # from .database import init_db
-from .routers import game, user
+from .routers import game, user, gamestate
 
 
 app = FastAPI()
@@ -21,6 +21,7 @@ app.add_middleware(
 
 app.include_router(game.router)
 app.include_router(user.router)
+app.include_router(gamestate.router)
 
 
 # if __name__ == "__main__":

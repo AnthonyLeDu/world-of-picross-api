@@ -1,0 +1,6 @@
+type Rgba = list[int | float]
+type Clue = dict[str, Rgba | int]
+type ClueLine = list[Clue | None]
+type Clues = list[list[ClueLine]]
+type LineContent = list[Rgba | None]
+type Content = list[LineContent | None]

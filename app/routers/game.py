@@ -1,6 +1,12 @@
 from typing import Annotated
 from fastapi import APIRouter, HTTPException, Depends, status
-from ..models.game import Game, GameDetails, GameSummary
+from ..models.game import (
+    Game,
+    GameDetails,
+    GameSummaryWithCreator,
+    GameInput,
+    GameSummary,
+)
 from ..models.user import User, get_current_user
 from sqlmodel import Session, select
 from ..database import engine
@@ -11,8 +17,18 @@ router = APIRouter()
 @router.get("/games")
 async def get_all_games():
     with Session(engine) as session:
-        statement = select(Game)
-        games = session.exec(statement).all()
+        games = session.exec(select(Game)).all()
+        return [GameSummaryWithCreator.model_validate(game) for game in games]
+
+
+@router.get("/games/me")
+async def get_current_user_games(
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    with Session(engine) as session:
+        games = session.exec(
+            select(Game).where(Game.creator_id == current_user.id)
+        ).all()
         return [GameSummary.model_validate(game) for game in games]
 
 
@@ -31,12 +47,15 @@ async def get_one_game(id: int):
 
 @router.post("/game", status_code=status.HTTP_201_CREATED)
 async def create_game(
-    game: Game,
+    game_input: GameInput,
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    game.creator_id = current_user.id  # Force current user to be the creator
+    # TODO: protect against XSRF
+    game = Game.model_validate(game_input)
+    game.creator_id = current_user.id  # Make current user the creator
     game.update_clues()
     game.update_difficulty()
+
     with Session(engine) as session:
         session.add(game)
         session.commit()
@@ -47,9 +66,10 @@ async def create_game(
 @router.put("/game/{id}")
 async def update_game(
     id: int,
-    game: Game,
+    game_input: GameInput,
     current_user: Annotated[User, Depends(get_current_user)],
 ):
+    # TODO: protect against XSRF
     # Be careful, all Game fields must be provided otherwise default
     # ones will be used.
     # See https://fastapi.tiangolo.com/tutorial/body-updates/
@@ -66,17 +86,15 @@ async def update_game(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Current user is not allowed to modify this game.",
             )
-        db_game.name = game.name
-        db_game.difficulty = game.difficulty
-        db_game.content = game.content
+        db_game.name = game_input.name
+        db_game.content = game_input.content
         db_game.update_difficulty()
         db_game.update_clues()
-        # TODO: Delete below
-        # db_game.creator_id = current_user.id
+
         session.add(db_game)
         session.commit()
         session.refresh(db_game)
-        return GameDetails.model_validate(game)
+        return GameDetails.model_validate(db_game)
 
 
 @router.delete("/game/{id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -84,6 +102,7 @@ async def delete_game(
     id: int,
     current_user: Annotated[User, Depends(get_current_user)],
 ):
+    # TODO: protect against XSRF
     with Session(engine) as session:
         game = session.get(Game, id)
         if game is None:

@@ -12,7 +12,7 @@ from ..models.user import (
     get_current_user,
     get_user,
 )
-from ..models.game import Game, GameSummary
+from ..models.game import Game, GameSummaryWithCreator
 from ..database import engine
 from ..security import (
     verify_password,
@@ -101,7 +101,7 @@ async def get_one_user(id: int):
 async def get_games_created_by_user(id: int):
     with Session(engine) as session:
         games = session.exec(select(Game).where(Game.creator_id == id)).all()
-        return [GameSummary.model_validate(game) for game in games]
+        return [GameSummaryWithCreator.model_validate(game) for game in games]
 
 
 @router.post("/user", status_code=status.HTTP_201_CREATED)
@@ -120,6 +120,7 @@ async def update_user(
     user: User,
     current_user: Annotated[User, Depends(get_current_user)],
 ):
+    # TODO: protect against XSRF
     # Be careful, all user fields must be provided otherwise default
     # ones will be used.
     # See https://fastapi.tiangolo.com/tutorial/body-updates/
@@ -149,6 +150,7 @@ async def delete_user(
     id: int,
     current_user: Annotated[User, Depends(get_current_user)],
 ):
+    # TODO: protect against XSRF
     if not current_user.id == id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
