@@ -31,9 +31,12 @@ async def get_one_game(id: int):
 
 @router.post("/game", status_code=status.HTTP_201_CREATED)
 async def create_game(
-    current_user: Annotated[User, Depends(get_current_user)], game: Game
+    game: Game,
+    current_user: Annotated[User, Depends(get_current_user)],
 ):
     game.creator_id = current_user.id  # Force current user to be the creator
+    game.update_clues()
+    game.update_difficulty()
     with Session(engine) as session:
         session.add(game)
         session.commit()
@@ -43,9 +46,9 @@ async def create_game(
 
 @router.put("/game/{id}")
 async def update_game(
-    current_user: Annotated[User, Depends(get_current_user)],
     id: int,
     game: Game,
+    current_user: Annotated[User, Depends(get_current_user)],
 ):
     # Be careful, all Game fields must be provided otherwise default
     # ones will be used.
@@ -66,7 +69,10 @@ async def update_game(
         db_game.name = game.name
         db_game.difficulty = game.difficulty
         db_game.content = game.content
-        db_game.creator_id = current_user.id
+        db_game.update_difficulty()
+        db_game.update_clues()
+        # TODO: Delete below
+        # db_game.creator_id = current_user.id
         session.add(db_game)
         session.commit()
         session.refresh(db_game)
@@ -75,7 +81,8 @@ async def update_game(
 
 @router.delete("/game/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_game(
-    current_user: Annotated[User, Depends(get_current_user)], id: int
+    id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
 ):
     with Session(engine) as session:
         game = session.get(Game, id)

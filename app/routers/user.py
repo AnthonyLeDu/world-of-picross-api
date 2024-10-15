@@ -116,9 +116,9 @@ async def create_user(user: User):
 
 @router.put("/user/{id}", response_model=PrivateUser)
 async def update_user(
-    current_user: Annotated[User, Depends(get_current_user)],
     id: int,
     user: User,
+    current_user: Annotated[User, Depends(get_current_user)],
 ):
     # Be careful, all user fields must be provided otherwise default
     # ones will be used.
@@ -146,7 +146,8 @@ async def update_user(
 
 @router.delete("/user/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
-    current_user: Annotated[User, Depends(get_current_user)], id: int
+    id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
 ):
     if not current_user.id == id:
         raise HTTPException(

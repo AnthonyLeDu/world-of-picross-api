@@ -26,20 +26,8 @@ class Game(SQLModel, table=True):
     creator: User | None = Relationship(back_populates="created_games")
     player_links: list[GameState] = Relationship(back_populates="game")
 
-    def __init__(self):
-        if self.content is not None:
-            if self.difficulty is None:
-                self.update_difficulty()
-            if self.clues is None:
-                self.update_clues()
-
-    def set_content(self, content: Content | None):
-        self.content = copy.deepcopy(content)
-        self.update_difficulty()
-        self.update_clues()
-
     def update_difficulty(self):
-        # TODO
+        # TODO: algorithm to calculate difficulty
         if self.content is None:
             self.difficulty = None
         self.difficulty = randint(1, 5)
@@ -83,7 +71,6 @@ class Game(SQLModel, table=True):
             list(map(get_line_clues, self.content)),
             list(map(get_line_clues, columns_content)),
         ]
-        pass
 
     @property
     def players_ids(self):
