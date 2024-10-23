@@ -14,6 +14,16 @@ from ..database import engine
 router = APIRouter()
 
 
+def get_game(id: int, session: Session, exception_if_not_found: bool = False):
+    game = session.get(Game, id)
+    if game is None and exception_if_not_found:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No game found for given id ({id}).",
+        )
+    return game
+
+
 @router.get("/games")
 async def get_all_games():
     with Session(engine) as session:
@@ -35,13 +45,9 @@ async def get_current_user_games(
 @router.get("/game/{id}")
 async def get_one_game(id: int):
     with Session(engine) as session:
-        game = session.get(Game, id)
-        if game is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No game found for given id ({id}).",
-            )
-        game.update_clues()  # TODO: remove
+        game = get_game(id, session, exception_if_not_found=True)
+        # TODO: remove when clues will be generated at game post/put
+        game.update_clues()
         return GameDetails.model_validate(game)
 
 
@@ -74,12 +80,7 @@ async def update_game(
     # ones will be used.
     # See https://fastapi.tiangolo.com/tutorial/body-updates/
     with Session(engine) as session:
-        db_game = session.get(Game, id)
-        if db_game is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No game found for given id ({id}).",
-            )
+        db_game = get_game(id, session, exception_if_not_found=True)
         # Validate that user owns the game
         if db_game.creator_id != current_user.id:
             raise HTTPException(
@@ -104,12 +105,7 @@ async def delete_game(
 ):
     # TODO: protect against XSRF
     with Session(engine) as session:
-        game = session.get(Game, id)
-        if game is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No game found for given id ({id}).",
-            )
+        game = get_game(id, session, exception_if_not_found=True)
         if game.creator_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

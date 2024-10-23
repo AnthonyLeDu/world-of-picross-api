@@ -22,9 +22,30 @@ class GameState(SQLModel, table=True):
         back_populates="played_game_links"
     )
 
+    def update_is_completed(self, goal_content: Content):
+        self.is_completed = False
+        if self.current_content is None or goal_content is None:
+            return False
+        if len(goal_content) != len(self.current_content):
+            raise ValueError("Contents don't have the same amount of rows.")
+        for r, row in enumerate(goal_content):
+            if len(row) != len(self.current_content[r]):
+                raise ValueError(
+                    "Content rows don't have the same amount of cells."
+                )
+            for c, cell in enumerate(row):
+                if cell != self.current_content[r][c]:
+                    return
+        self.is_completed = True
 
-class GameStateContent(BaseModel):
-    is_completed: bool = False
+
+class GameStateContentIn(BaseModel):
     current_content: Content | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class GameStateContentOut(GameStateContentIn):
+    is_completed: bool = False
 
     model_config = ConfigDict(from_attributes=True)
