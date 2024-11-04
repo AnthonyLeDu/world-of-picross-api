@@ -62,21 +62,26 @@ async def get_user(email: str):
         return session.exec(statement).unique().one_or_none()
 
 
+async def get_current_user_or_none(token: str = Depends(cookie_scheme)):
+    try:
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            return None
+        token_data = TokenData(username=username)
+    except InvalidTokenError:
+        return None
+    user = await get_user(token_data.username)  # username = email
+    return user
+
+
 async def get_current_user(token: str = Depends(cookie_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    try:
-        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-        token_data = TokenData(username=username)
-    except InvalidTokenError:
-        raise credentials_exception
-    user = await get_user(token_data.username)  # username = email
+    user = await get_current_user_or_none(token)
     if user is None:
         raise credentials_exception
     return user

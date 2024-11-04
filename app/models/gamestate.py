@@ -41,6 +41,13 @@ class GameState(SQLModel, table=True):
         self.is_completed = True
 
 
+class GameStateCompletion(BaseModel):
+    game_id: int
+    is_completed: bool = False
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class GameStateContentIn(BaseModel):
     current_content: Content | None
 
@@ -48,6 +55,7 @@ class GameStateContentIn(BaseModel):
 
 
 class GameStateContentOut(GameStateContentIn):
+    game_id: int
     is_completed: bool = False
 
     model_config = ConfigDict(from_attributes=True)

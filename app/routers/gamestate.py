@@ -2,6 +2,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Depends, status
 from ..models.gamestate import (
     GameState,
+    GameStateCompletion,
     GameStateContentIn,
     GameStateContentOut,
 )
@@ -37,6 +38,20 @@ def get_game_state(
             ),
         )
     return game_state
+
+
+@router.get("/gamestatescompletion")
+async def get_all_gamestates_completion_for_current_user(
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    with Session(engine) as session:
+        game_states = session.exec(
+            select(GameState).where(GameState.user_id == current_user.id)
+        ).all()
+        return [
+            GameStateCompletion.model_validate(game_state)
+            for game_state in game_states
+        ]
 
 
 @router.get("/gamestate/{id}")
