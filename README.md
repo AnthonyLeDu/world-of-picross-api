@@ -56,6 +56,14 @@ Make sure you set the **DEBUG option to False** when in production.
 
 Make sure you activated the python virtual environment and execute
 
+### Development
+
 ```bash
 fastapi dev app/main.py
+```
+
+### Production
+
+```bash
+fastapi run app/main.py
 ```
