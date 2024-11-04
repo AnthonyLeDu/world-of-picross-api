@@ -49,7 +49,7 @@ class Game(SQLModel, table=True):
                     last_rgba = copy.copy(rgba)
                     is_first_index = False
             if len(clue_line) == 0:
-                clue_line.append(None)
+                return None
             return clue_line
 
         if self.content is None:
