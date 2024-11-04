@@ -1,7 +1,7 @@
 from typing import Annotated
 from datetime import timedelta
 from fastapi import APIRouter, HTTPException, Depends, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -30,7 +30,7 @@ class LoginData(BaseModel):
     password: str
 
 
-@router.post("/token")
+@router.post("/login")
 async def login_with_credentials(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ) -> Token:
@@ -49,9 +49,7 @@ async def login_with_credentials(
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=expires
     )
-    response = JSONResponse(
-        content={"access_token": access_token, "token_type": "bearer"}
-    )
+    response = Response()
     response.set_cookie(
         key=JWT_COOKIE_NAME,
         value=access_token,
@@ -63,11 +61,20 @@ async def login_with_credentials(
     return response
 
 
-@router.get("/token")
+@router.get("/login")
 async def login_with_cookie(
     current_user: Annotated[User, Depends(get_current_user)]
 ):
     return current_user
+
+
+@router.get("/logout")
+async def logout(
+    response: Response,
+):
+    response.delete_cookie(JWT_COOKIE_NAME)
+    response.status_code = 200
+    return response
 
 
 @router.get("/users")
