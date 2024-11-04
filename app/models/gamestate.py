@@ -35,6 +35,8 @@ class GameState(SQLModel, table=True):
                 )
             for c, cell in enumerate(row):
                 if cell != self.current_content[r][c]:
+                    if cell is None and self.current_content[r][c] is False:
+                        continue  # Empty or false are both valid here
                     return
         self.is_completed = True
 
