@@ -5,8 +5,8 @@ DROP TABLE IF EXISTS "game", "user", "gamestate";
 CREATE TABLE "user" (
   "id" SERIAL PRIMARY KEY NOT NULL UNIQUE,
   "pseudo" VARCHAR(32) NOT NULL UNIQUE,
-  "email" VARCHAR(254) NOT NULL UNIQUE CHECK (
-    email ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+  "username" VARCHAR(254) NOT NULL UNIQUE CHECK (
+    username ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
   ),
   "password" VARCHAR(256) NOT NULL,
   "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),

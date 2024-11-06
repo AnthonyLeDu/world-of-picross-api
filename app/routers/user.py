@@ -25,16 +25,10 @@ from ..config import JWT_ACCESS_TOKEN_EXPIRE_MINUTES, JWT_COOKIE_NAME
 router = APIRouter()
 
 
-class LoginData(BaseModel):
-    email: str
-    password: str
-
-
 @router.post("/login")
 async def login_with_credentials(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ) -> Token:
-    # user email must be under the 'username' to satisfy the OAuth2 specs.
     user = await get_user(form_data.username)
     # Verify password
     if user is None or not verify_password(form_data.password, user.password):
@@ -47,7 +41,7 @@ async def login_with_credentials(
     # Create and send token
     expires = timedelta(minutes=JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=expires
+        data={"sub": user.username}, expires_delta=expires
     )
     response = Response()
     response.set_cookie(
@@ -113,8 +107,29 @@ async def get_games_created_by_user(id: int):
 
 @router.post("/user", status_code=status.HTTP_201_CREATED)
 async def create_user(user: User):
+
+    def get_non_unique_user_exception(non_unique_field: str):
+        return HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"User with this {non_unique_field} already exists.",
+        )
+
     user.password = get_password_hash(user.password)
+
     with Session(engine) as session:
+        # Validate that username (email) is unique
+        statement = select(User).where(User.username == user.username)
+        db_user = session.exec(statement).one_or_none()
+        if db_user is not None:
+            raise get_non_unique_user_exception("email")
+
+        # Validate that pseudo is unique
+        statement = select(User).where(User.pseudo == user.pseudo)
+        db_user = session.exec(statement).one_or_none()
+        if db_user is not None:
+            raise get_non_unique_user_exception("pseudo")
+
+        # Create new user
         session.add(user)
         session.commit()
         session.refresh(user)
@@ -144,7 +159,7 @@ async def update_user(
                 detail="You are not allowed to modify this user.",
             )
         db_user.pseudo = user.pseudo
-        db_user.email = user.email  # OAuth2 spec : username = email
+        db_user.username = user.username
         db_user.password = get_password_hash(user.password)
         session.add(db_user)
         session.commit()

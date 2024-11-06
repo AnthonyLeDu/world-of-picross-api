@@ -13,7 +13,7 @@ from ..config import JWT_SECRET_KEY, JWT_ALGORITHM
 class User(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     pseudo: str = Field(unique=True)
-    email: str | None = Field(default=None, unique=True)
+    username: str | None = Field(unique=True)  # email
     password: str
     created_games: list["Game"] = Relationship(  # type: ignore
         back_populates="creator",
@@ -43,13 +43,13 @@ class PublicUser(UserSummary):
 
 
 class PrivateUser(PublicUser):
-    email: str | None
+    username: str | None
     played_games_ids: list[int]
 
     model_config = ConfigDict(from_attributes=True)
 
 
-async def get_user(email: str):
+async def get_user(username: str):
     with Session(engine) as session:
         statement = (
             select(User)
@@ -57,7 +57,7 @@ async def get_user(email: str):
                 joinedload(User.played_game_links),
                 joinedload(User.created_games),
             )
-            .where(User.email == email)
+            .where(User.username == username)
         )
         return session.exec(statement).unique().one_or_none()
 
@@ -71,7 +71,7 @@ async def get_current_user_or_none(token: str = Depends(cookie_scheme)):
         token_data = TokenData(username=username)
     except InvalidTokenError:
         return None
-    user = await get_user(token_data.username)  # username = email
+    user = await get_user(token_data.username)
     return user
 
 

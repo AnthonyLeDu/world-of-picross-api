@@ -4,7 +4,7 @@ WITH
 inserted_users AS (
   INSERT INTO "user" (
     "pseudo",
-    "email",
+    "username",
     "password"
   )
   VALUES
