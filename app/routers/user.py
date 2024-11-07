@@ -1,12 +1,12 @@
 from typing import Annotated
 from datetime import timedelta
 from fastapi import APIRouter, HTTPException, Depends, status
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import Response
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel
 from sqlmodel import Session, select
 from ..models.user import (
     User,
+    UserRegisterInput,
     PrivateUser,
     PublicUser,
     get_current_user,
@@ -16,7 +16,6 @@ from ..models.game import Game, GameSummaryWithCreator
 from ..database import engine
 from ..security import (
     verify_password,
-    Token,
     create_access_token,
     get_password_hash,
 )
@@ -28,7 +27,7 @@ router = APIRouter()
 @router.post("/login")
 async def login_with_credentials(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
-) -> Token:
+):
     user = await get_user(form_data.username)
     # Verify password
     if user is None or not verify_password(form_data.password, user.password):
@@ -106,7 +105,7 @@ async def get_games_created_by_user(id: int):
 
 
 @router.post("/user", status_code=status.HTTP_201_CREATED)
-async def create_user(user: User):
+async def create_user(user: UserRegisterInput):
 
     def get_non_unique_user_exception(non_unique_field: str):
         return HTTPException(
@@ -130,6 +129,7 @@ async def create_user(user: User):
             raise get_non_unique_user_exception("pseudo")
 
         # Create new user
+        user = User.model_validate(user)
         session.add(user)
         session.commit()
         session.refresh(user)

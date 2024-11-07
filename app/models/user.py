@@ -1,7 +1,7 @@
 import jwt
 from sqlalchemy.orm import joinedload
 from jwt.exceptions import InvalidTokenError
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Form
 from pydantic import BaseModel, ConfigDict
 from sqlmodel import Field, SQLModel, Relationship, Session, select
 from ..database import engine
@@ -27,6 +27,12 @@ class User(SQLModel, table=True):
     @property
     def played_games_ids(self):
         return [game_state.game_id for game_state in self.played_game_links]
+
+
+class UserRegisterInput(BaseModel):
+    pseudo: str
+    username: str  # email
+    password: str
 
 
 class UserSummary(BaseModel):
